@@ -24,6 +24,10 @@ const clubs=NEXORA_DATA.clubs;
 const opponent={name:'Kuzey Liman FK',code:'KLF',style:'Balanced'};
 let selectedClub=null,selectedStyle='Tactical Genius',career={},squad=[],formation='4-3-3',startingXI=[],matchTimer=null;
 
+function getClubData(club){
+ if(!club)return null;
+ return clubs.find(c=>c.id===club.id||c.code===club.code||c.name===club.name)||club;
+}
 function gridToIso(x,y){const tileW=16,tileH=8;return{x:(x-y)*tileW/2,y:(x+y)*tileH/2}}
 function clampGrid(x,y){return{x:Math.max(0,Math.min(GRID_WIDTH,x)),y:Math.max(0,Math.min(GRID_HEIGHT,y))}}
 function formatMoney(value){return `€${(value/1000000).toFixed(1)}M`}
