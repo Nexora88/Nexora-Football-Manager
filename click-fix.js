@@ -2,31 +2,31 @@
   const boot=()=>{
     const modal=document.getElementById('modal');
     if(!modal)return;
+    let forwarding=false;
     const open=()=>{
       try{if(typeof window.renderClubs==='function')window.renderClubs()}catch(e){console.warn('NEXORA renderClubs failed',e)}
       modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';
     };
     const rescue=e=>{
-      const el=e.target.closest('button');if(!el)return;
+      const el=e.target.closest('button');if(!el||forwarding)return;
       const id=el.id;
       try{
-        if(id==='startBtn'||id==='demoBtn'){open();return;}
-        if(id==='closeBtn'&&typeof window.closeModal==='function'){window.closeModal();return;}
-        if(id==='squadBtn'&&typeof window.openSquad==='function'){window.openSquad();return;}
-        if(id==='continueBtn'){
-          const selected=document.querySelector('.club-choice.selected');
-          if(selected&&window.NEXORA_DATA&&typeof window.beginCareer==='function'){
-            const club=window.NEXORA_DATA.clubs[Number(selected.dataset.index)];
-            if(club)window.beginCareer(club);
-          }
+        if(id==='startBtn'||id==='demoBtn'){open();return}
+        if(id==='closeBtn'){
+          if(typeof window.closeModal==='function')window.closeModal();
+          else{modal.classList.remove('open');modal.setAttribute('aria-hidden','true');document.body.style.overflow=''}
+          return;
         }
-      }catch(err){console.warn('NEXORA click rescue failed',err)}
+        if(id==='continueBtn'||id==='squadBtn'){
+          /* app.js owns these handlers. If its lexical functions are not on window,
+             forward the click once instead of trying to call a missing global. */
+          forwarding=true;
+          el.click();
+          forwarding=false;
+        }
+      }catch(err){forwarding=false;console.warn('NEXORA click rescue failed',err)}
     };
     document.addEventListener('click',rescue,true);
-    [document.getElementById('startBtn'),document.getElementById('demoBtn')].forEach(btn=>{
-      if(!btn||btn.dataset.clickFixBound)return;
-      btn.dataset.clickFixBound='1';btn.addEventListener('click',open,{capture:true});
-    });
   };
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
