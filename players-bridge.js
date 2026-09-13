@@ -1,8 +1,8 @@
-/* NEXORA — connect every club to the fictional player engine */
+/* NEXORA — connect fictional players to every club */
 (()=>{
   const original=window.NEXORA_DATA?.createSquad;
   if(!original)return;
-  const universal=window.NEXORA_UNIVERSAL_PLAYER_FACTORY;
+  const universal=window.NEXORA_FICTIONAL_PLAYER_FACTORY;
   const turkishFactory=window.NEXORA_TURKISH_PLAYER_FACTORY;
   const legacyFactory=window.NEXORA_PLAYER_FACTORY;
   window.NEXORA_DATA.createSquad=function(club){
