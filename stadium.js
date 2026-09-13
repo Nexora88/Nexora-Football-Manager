@@ -13,7 +13,6 @@
   const dateKey = date => date.toISOString().slice(0, 10);
   const addDays = (value, days) => { const date = iso(value); date.setDate(date.getDate() + days); return dateKey(date); };
   const daysBetween = (from, to) => Math.max(0, Math.ceil((iso(to) - iso(from)) / 86400000));
-
   function ensureStadium() {
     if (!gameState.stadium) gameState.stadium = { level: 0, capacity: 5000, construction: null, totalInvested: 0, ticketPrice: 18, attendance: 0, attendanceRate: 0, matchImportance: 'normal' };
     if (!Number.isFinite(gameState.stadium.capacity)) gameState.stadium.capacity = 5000;
@@ -21,15 +20,12 @@
     if (!Number.isFinite(gameState.stadium.ticketPrice)) gameState.stadium.ticketPrice = 18;
     return gameState.stadium;
   }
-
   function setTribunesColor(homeColor = '#b7ff3c', awayColor = '#ffffff') {
-    const host = document.getElementById('stadiumTribunes');
-    if (!host) return;
+    const host = document.getElementById('stadiumTribunes'); if (!host) return;
     host.style.setProperty('--home-color', homeColor); host.style.setProperty('--away-color', awayColor);
     host.querySelectorAll('.tribune-home').forEach(el => el.style.backgroundColor = homeColor);
     host.querySelectorAll('.tribune-away').forEach(el => el.style.backgroundColor = awayColor);
   }
-
   function generateAttendance({ reputation = gameState.reputation || 0, ticketPrice = 18, importance = 'normal' } = {}) {
     const stadium = ensureStadium();
     const importanceBonus = { normal: 0, derby: 0.13, final: 0.18, european: 0.10, relegation: 0.08 }[importance] || 0;
@@ -40,7 +36,6 @@
     stadium.ticketPrice = ticketPrice; stadium.matchImportance = importance; stadium.attendanceRate = rate; stadium.attendance = Math.round(stadium.capacity * rate);
     return { rate, attendance: stadium.attendance, capacity: stadium.capacity };
   }
-
   function renderTribunes(attendanceRate) {
     const host = document.getElementById('stadiumTribunes'); if (!host) return;
     [...host.querySelectorAll('.tribune-layer')].forEach((layer, index) => {
@@ -49,14 +44,12 @@
       layer.style.opacity = attendanceRate < threshold ? '0.12' : String(Math.min(1, 0.45 + attendanceRate * 0.65));
     });
   }
-
   function triggerGoalCelebration() {
-    const host = document.getElementById('stadiumDevelopment'); if (!host) return;
-    host.classList.remove('goal-celebration'); void host.offsetWidth; host.classList.add('goal-celebration');
-    window.clearTimeout(window.__nexoraGoalTimer);
-    window.__nexoraGoalTimer = window.setTimeout(() => host.classList.remove('goal-celebration'), 2000);
+    const host = document.getElementById('stadiumDevelopment');
+    if (host) { host.classList.remove('goal-celebration'); void host.offsetWidth; host.classList.add('goal-celebration'); window.clearTimeout(window.__nexoraGoalTimer); window.__nexoraGoalTimer = window.setTimeout(() => host.classList.remove('goal-celebration'), 2000); }
+    document.body.classList.remove('match-goal'); void document.body.offsetWidth; document.body.classList.add('match-goal'); window.clearTimeout(window.__nexoraMatchGoalTimer); window.__nexoraMatchGoalTimer = window.setTimeout(() => document.body.classList.remove('match-goal'), 900);
   }
-
+  window.addEventListener('nexora:match-event', event => { if (event.detail?.type === 'goal') triggerGoalCelebration(); });
   function refreshStadium() {
     ensureStadium(); const stadium = gameState.stadium; const next = tiers[stadium.level + 1]; const construction = stadium.construction; const current = tiers[stadium.level] || tiers[0];
     const attendanceData = generateAttendance({ reputation: gameState.reputation || 0, ticketPrice: stadium.ticketPrice, importance: stadium.matchImportance || 'normal' });
@@ -70,19 +63,9 @@
     document.getElementById('goalTest')?.addEventListener('click', triggerGoalCelebration);
     if (finished) completeConstruction();
   }
-
-  function startConstruction(targetLevel) {
-    const stadium = ensureStadium(), target = tiers[targetLevel]; if (!target || stadium.construction) return;
-    if (gameState.money < target.cost) { alert(`Not enough funds. Required: ${money(target.cost)}`); return; }
-    gameState.money -= target.cost; stadium.construction = { targetLevel, endDate: addDays(gameState.date, target.days) }; stadium.totalInvested += target.cost;
-    persist(); syncDashboard(); refreshStadium();
-  }
-  function completeConstruction() {
-    const stadium = ensureStadium(); if (!stadium.construction || gameState.date < stadium.construction.endDate) return;
-    const target = tiers[stadium.construction.targetLevel]; stadium.level = stadium.construction.targetLevel; stadium.capacity = target.capacity; stadium.construction = null; persist(); syncDashboard(); refreshStadium();
-  }
+  function startConstruction(targetLevel) { const stadium = ensureStadium(), target = tiers[targetLevel]; if (!target || stadium.construction) return; if (gameState.money < target.cost) { alert(`Not enough funds. Required: ${money(target.cost)}`); return; } gameState.money -= target.cost; stadium.construction = { targetLevel, endDate: addDays(gameState.date, target.days) }; stadium.totalInvested += target.cost; persist(); syncDashboard(); refreshStadium(); }
+  function completeConstruction() { const stadium = ensureStadium(); if (!stadium.construction || gameState.date < stadium.construction.endDate) return; const target = tiers[stadium.construction.targetLevel]; stadium.level = stadium.construction.targetLevel; stadium.capacity = target.capacity; stadium.construction = null; persist(); syncDashboard(); refreshStadium(); }
   function advanceTime(days) { if (!gameState.club) return; gameState.date = addDays(gameState.date, days); completeConstruction(); persist(); syncDashboard(); refreshStadium(); }
-
   window.setTribunesColor=setTribunesColor; window.generateAttendance=generateAttendance; window.triggerGoalCelebration=triggerGoalCelebration;
   function mount(){ if (!document.getElementById('dashboard')) return; const panels=document.querySelector('.dashboard-panels'); if (!panels || document.getElementById('stadiumDevelopment')) return; const section=document.createElement('section'); section.id='stadiumDevelopment'; section.className='stadium-development'; panels.insertAdjacentElement('afterend',section); ensureStadium(); refreshStadium(); }
   window.addEventListener('load',mount); window.addEventListener('nexora:career-ready',refreshStadium); setTimeout(mount,50);
