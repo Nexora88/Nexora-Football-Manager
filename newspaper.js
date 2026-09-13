@@ -1,4 +1,5 @@
 (()=>{
+const css=()=>{if(document.getElementById('worldSystemsCSS'))return;const l=document.createElement('link');l.id='worldSystemsCSS';l.rel='stylesheet';l.href='world-systems.css';document.head.appendChild(l)};css();
 const get=()=>{try{return JSON.parse(localStorage.getItem('nexoraCareer')||'null')}catch{return null}};
 const money=v=>`€${(Number(v||0)/1000000).toFixed(1)}M`;
 function headline(s){const n=(s?.gameState?.media?.news||[]).find(x=>x.tag==='BREAKING')||(s?.gameState?.media?.news||[])[0];return n||{title:'NEXORA FOOTBALL MANAGER — NEW SEASON, NEW STORY',detail:'The football world is waiting for the next chapter.',date:s?.gameState?.date||''}}
