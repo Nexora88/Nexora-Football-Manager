@@ -1,0 +1,40 @@
+/* NEXORA FOOTBALL MANAGER — DATA LAYER */
+const NEXORA_DATA={
+ version:'1.0.0',
+ schema:'club/player attributes -> simulation inputs',
+ clubs:[
+  {id:'ays',name:'Anadolu Yıldızı SK',city:'Bursa',code:'AYS',style:'Balanced',league:'Nexora Super League',difficulty:'NORMAL',budget:5000000,reputation:52,stadiumCapacity:5000,colors:['#d71920','#ffffff']},
+  {id:'mrk',name:'Marmara Kartalları',city:'İstanbul',code:'MRK',style:'Attacking',league:'Nexora Super League',difficulty:'HARD',budget:6500000,reputation:64,stadiumCapacity:8000,colors:['#102a43','#ffffff']},
+  {id:'eaf',name:'Ege Ateşi FK',city:'İzmir',code:'EAF',style:'Technical',league:'Nexora Super League',difficulty:'NORMAL',budget:5500000,reputation:58,stadiumCapacity:7000,colors:['#f36f21','#0b3d91']},
+  {id:'tb26',name:'Trakya Birlik 1926',city:'Edirne',code:'TB26',style:'Defensive',league:'Nexora Super League',difficulty:'CHALLENGE',budget:3200000,reputation:45,stadiumCapacity:5000,colors:['#1f7a4c','#ffffff']}
+ ],
+ names:['Emir Kaya','Mert Arslan','Bora Yılmaz','Kerem Demir','Efe Aydın','Can Korkmaz','Arda Şen','Yiğit Koç','Deniz Aksoy','Baran Çelik','Ozan Erdem','Ali Tunç','Eren Güneş','Kaan Polat','Berk Özkan','Umut Kaplan','Doruk Keskin','Metehan Kurt','Selim Çetin','Furkan Işık','Onur Taş','Burak Vural'],
+ positions:['GK','GK','RB','CB','CB','LB','DM','CM','CM','AM','RW','LW','ST','ST','CB','RB','LB','CM','DM','RW','LW','ST'],
+ positionWeights:{
+  GK:{pace:-8,passing:2,shooting:-18,defending:18,dribbling:-8,physical:7,vision:4,stamina:3},
+  CB:{pace:-1,passing:4,shooting:-10,defending:14,dribbling:-2,physical:10,vision:3,stamina:5},
+  RB:{pace:8,passing:5,shooting:-4,defending:7,dribbling:6,physical:4,vision:3,stamina:9},
+  LB:{pace:8,passing:5,shooting:-4,defending:7,dribbling:6,physical:4,vision:3,stamina:9},
+  DM:{pace:-1,passing:8,shooting:-2,defending:9,dribbling:2,physical:8,vision:9,stamina:8},
+  CM:{pace:3,passing:10,shooting:3,defending:3,dribbling:7,physical:4,vision:10,stamina:9},
+  AM:{pace:5,passing:9,shooting:7,defending:-4,dribbling:10,physical:-2,vision:11,stamina:5},
+  RW:{pace:10,passing:5,shooting:5,defending:-6,dribbling:12,physical:-1,vision:5,stamina:6},
+  LW:{pace:10,passing:5,shooting:5,defending:-6,dribbling:12,physical:-1,vision:5,stamina:6},
+  ST:{pace:6,passing:0,shooting:13,defending:-8,dribbling:7,physical:7,vision:2,stamina:4}
+ },
+ createSquad(club){
+  const clubStyle=club?.style||'Balanced';
+  const base=clubStyle==='Attacking'?71:clubStyle==='Defensive'?68:clubStyle==='Technical'?70:69;
+  const styleBonus=clubStyle==='Attacking'?{passing:2,shooting:2}:clubStyle==='Technical'?{passing:3,dribbling:3,vision:2}:clubStyle==='Defensive'?{defending:3,physical:2}:{};
+  return this.names.map((name,i)=>{
+   const pos=this.positions[i], w=this.positionWeights[pos], seed=(i*17+11)%13;
+   const stat=n=>Math.max(45,Math.min(90,base+((i*7)%9)-4+(w[n]||0)+(styleBonus[n]||0)+(seed%5)-2));
+   const age=18+(i*3)%15;
+   const potential=Math.max(stat('passing'),stat('dribbling'),stat('shooting'))+Math.max(3,22-Math.floor(age/2));
+   const rating=Math.round(stat('defending')*.22+stat('passing')*.16+stat('shooting')*.16+stat('dribbling')*.16+stat('physical')*.10+stat('pace')*.10+stat('vision')*.10);
+   return {id:i+1,name,pos,role:pos,age,rating,pace:stat('pace'),passing:stat('passing'),shooting:stat('shooting'),defending:stat('defending'),dribbling:stat('dribbling'),physical:stat('physical'),vision:stat('vision'),stamina:stat('stamina'),fitness:86+((i*5)%14),morale:72+((i*9)%24),potential:Math.min(90,potential),value:Math.round((rating*rating*age<5000?rating*1200:rating*rating*1800)/100)*100,wage:4500+(i*650)};
+  });
+ }
+};
+
+function getClubData(club){return NEXORA_DATA.clubs.find(c=>c.id===club?.id||c.code===club?.code)||club}
