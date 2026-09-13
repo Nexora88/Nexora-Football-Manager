@@ -1,32 +1,41 @@
 (()=>{
-  const LANGS=[['tr','TÜRKÇE'],['en','ENGLISH'],['de','DEUTSCH'],['es','ESPAÑOL']];
+  const LANGS=[['tr','TÜRKÇE'],['en','ENGLISH'],['de','DEUTSCH'],['es','ESPAÑOL'],['pt','PORTUGUÊS']];
   const labels={
     tr:{title:'DİLİNİZİ SEÇİN',sub:'Nexora Football Manager deneyiminize başlamak için dil seçin.',continue:'DEVAM ET'},
     en:{title:'SELECT YOUR LANGUAGE',sub:'Choose a language to begin your Nexora Football Manager experience.',continue:'CONTINUE'},
     de:{title:'SPRACHE AUSWÄHLEN',sub:'Wählen Sie eine Sprache für Ihr Nexora Football Manager Erlebnis.',continue:'WEITER'},
-    es:{title:'SELECCIONA TU IDIOMA',sub:'Elige un idioma para comenzar tu experiencia en Nexora Football Manager.',continue:'CONTINUAR'}
+    es:{title:'SELECCIONA TU IDIOMA',sub:'Elige un idioma para comenzar tu experiencia en Nexora Football Manager.',continue:'CONTINUAR'},
+    pt:{title:'SELECIONE SEU IDIOMA',sub:'Escolha um idioma para começar sua experiência no Nexora Football Manager.',continue:'CONTINUAR'}
   };
+  const KEY='nexoraLanguage';
+  function syncI18n(lang){
+    document.documentElement.lang=lang;
+    document.documentElement.dataset.language=lang;
+    window.NEXORA_LANGUAGE=lang;
+    try{window.NEXORA_I18N?.setLanguage?.(lang)}catch(e){console.warn('NEXORA i18n sync failed',e)}
+    try{window.NEXORA_I18N?.refresh?.()}catch(e){console.warn('NEXORA i18n refresh failed',e)}
+    window.dispatchEvent(new CustomEvent('nexora:language-changed',{detail:{language:lang}}));
+  }
   function openLanguage(){
     if(document.getElementById('languageGate')) return;
-    const saved=localStorage.getItem('nexoraLanguage');
+    const saved=localStorage.getItem(KEY);
     const gate=document.createElement('div');
     gate.id='languageGate';
     gate.innerHTML=`<div class="language-card"><div class="brand-mark">N</div><p class="eyebrow">NEXORA FOOTBALL MANAGER</p><h2 id="langTitle"></h2><p id="langSub"></p><div class="language-grid">${LANGS.map(([code,name])=>`<button class="language-choice" data-lang="${code}">${name}</button>`).join('')}</div><button class="primary full" id="languageContinue"></button></div>`;
     document.body.appendChild(gate);
     const setLang=lang=>{
       if(!labels[lang]) lang='tr';
-      document.documentElement.lang=lang;
-      localStorage.setItem('nexoraLanguage',lang);
+      localStorage.setItem(KEY,lang);
       gate.dataset.lang=lang;
       document.getElementById('langTitle').textContent=labels[lang].title;
       document.getElementById('langSub').textContent=labels[lang].sub;
       document.getElementById('languageContinue').textContent=labels[lang].continue+' →';
       document.querySelectorAll('.language-choice').forEach(b=>b.classList.toggle('selected',b.dataset.lang===lang));
-      window.NEXORA_LANGUAGE=lang;
+      syncI18n(lang);
     };
     document.querySelectorAll('.language-choice').forEach(b=>b.addEventListener('click',()=>setLang(b.dataset.lang)));
-    document.getElementById('languageContinue').addEventListener('click',()=>{gate.classList.add('hidden');setTimeout(()=>gate.remove(),180)});
-    setLang(saved||'tr');
+    document.getElementById('languageContinue').addEventListener('click',()=>{syncI18n(gate.dataset.lang||localStorage.getItem(KEY)||'tr');gate.classList.add('hidden');setTimeout(()=>gate.remove(),180)});
+    setLang(saved&&labels[saved]?saved:'tr');
   }
   function injectStyle(){
     const s=document.createElement('style');
@@ -35,21 +44,26 @@
   }
   function fallbackInteractions(){
     document.addEventListener('click',e=>{
-      const el=e.target.closest('button,a'); if(!el)return;
+      const el=e.target.closest('button,a');if(!el)return;
       const id=el.id;
       try{
         if(id==='startBtn'||id==='demoBtn'){
-          if(typeof window.openModal==='function'){window.openModal();if(typeof window.renderClubs==='function')window.renderClubs();return;}
-          const modal=document.getElementById('modal');if(modal){modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';}
+          const modal=document.getElementById('modal');
+          if(modal){modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';if(window.NEXORA_DATA?.clubs){const grid=document.getElementById('clubGrid');if(grid&&!grid.children.length)grid.innerHTML=window.NEXORA_DATA.clubs.map((c,i)=>`<button class="club-choice" data-index="${i}"><b>${c.code}</b><strong>${c.name}</strong><span>${c.city} · ${c.style} · ${c.difficulty}</span><small>€${(c.budget/1000000).toFixed(1)}M BUDGET · ${c.stadiumCapacity.toLocaleString('en-US')} CAP.</small></button>`).join('')}}
         }
-        if(id==='closeBtn'){if(typeof window.closeModal==='function')window.closeModal();else{const m=document.getElementById('modal');if(m)m.classList.remove('open');}}
-        if(id==='createClubBtn'&&typeof window.openCreateClub==='function')window.openCreateClub();
-        if(id==='saveClubBtn'&&typeof window.saveCustomClub==='function')window.saveCustomClub();
-        if(id==='continueBtn'&&typeof window.continueCareer==='function')window.continueCareer();
-        if(id==='squadBtn'&&typeof window.openSquad==='function')window.openSquad();
+        if(id==='closeBtn'){const m=document.getElementById('modal');if(m){m.classList.remove('open');m.setAttribute('aria-hidden','true');document.body.style.overflow=''}}
       }catch(err){console.warn('NEXORA interaction fallback:',err)}
     },true);
   }
+  function keepLanguage(){
+    const lang=localStorage.getItem(KEY);if(lang&&labels[lang])syncI18n(lang);
+    window.addEventListener('nexora:language-changed',e=>{if(e.detail?.language) localStorage.setItem(KEY,e.detail.language)});
+    const observer=new MutationObserver(()=>{
+      if(window.NEXORA_I18N?.refresh){clearTimeout(observer._t);observer._t=setTimeout(()=>window.NEXORA_I18N.refresh(),30)}
+    });
+    observer.observe(document.body,{childList:true,subtree:true});
+  }
   injectStyle();
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{openLanguage();fallbackInteractions()});else{openLanguage();fallbackInteractions()}
+  const boot=()=>{openLanguage();fallbackInteractions();keepLanguage()};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
