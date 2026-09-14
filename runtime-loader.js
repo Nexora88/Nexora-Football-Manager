@@ -1,6 +1,5 @@
 (()=>{
   const batches=[
-    ['boot-ui.js'],
     ['career-loop.js','matchday-bridge.js','uefa-coefficients.js','league-system.js','season-teams.js'],
     ['fixture-engine.js','fixture-match-ui.js','competition-draws.js','domestic-cup.js','cup-engine.js','europe-engine.js','europe-season.js'],
     ['season-end.js','season-awards.js','career-jobs.js','match-polish.js','newspaper.js','press-conference.js'],
