@@ -1,0 +1,13 @@
+(()=>{
+const DAYS={
+ '11-10':{tr:'Mustafa Kemal Atatürk Kalbimizde',en:'Mustafa Kemal Atatürk Lives in Our Hearts',de:'Mustafa Kemal Atatürk bleibt in unseren Herzen',es:'Mustafa Kemal Atatürk vive en nuestros corazones',pt:'Mustafa Kemal Atatürk vive em nossos corações',type:'mourning'},
+ '04-23':{tr:'23 Nisan Ulusal Egemenlik ve Çocuk Bayramı',en:'National Sovereignty and Children’s Day',de:'Tag der Nationalen Souveränität und des Kindes',es:'Día de la Soberanía Nacional y de la Infancia',pt:'Dia da Soberania Nacional e das Crianças',type:'celebration'},
+ '10-29':{tr:'29 Ekim Cumhuriyet Bayramı',en:'Republic Day',de:'Tag der Republik',es:'Día de la República',pt:'Dia da República',type:'celebration'}
+};
+const lang=()=>document.documentElement.lang||localStorage.getItem('nexoraLanguage')||'tr';
+function today(){const d=new Date();return String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function active(){return DAYS[today()]}
+function apply(){const day=active();document.documentElement.classList.toggle('nexora-mourning',day?.type==='mourning');document.documentElement.classList.toggle('nexora-national-day',day?.type==='celebration');if(!day)return;let root=document.getElementById('specialDayLayer');if(!root){root=document.createElement('div');root.id='specialDayLayer';document.body.appendChild(root)}root.innerHTML='<div class="special-day-ribbon '+day.type+'"><span>'+day[lang()]+'</span></div>'+(day.type==='mourning'?'<div class="respect-overlay" id="respectOverlay" hidden><div class="respect-card"><div class="respect-mark">10·11</div><h2>'+day[lang()]+'</h2><p>Saygı duruşu</p><div class="respect-timer">01:00</div><button class="primary" id="respectContinue">DEVAM ET</button></div></div>':'');if(day.type==='mourning'){window.NEXORA_SPECIAL_DAYS.showRespect=()=>{const o=document.getElementById('respectOverlay');if(!o)return;o.hidden=false;let n=60;const timer=setInterval(()=>{n--;o.querySelector('.respect-timer').textContent='00:'+String(n).padStart(2,'0');if(n<=0){clearInterval(timer);o.hidden=true}},1000);o.querySelector('#respectContinue').onclick=()=>{clearInterval(timer);o.hidden=true}}}window.dispatchEvent(new CustomEvent('nexora:special-day',{detail:day}))}
+function init(){apply();setInterval(()=>{if(active()?.type!==document.documentElement.dataset.specialDayType){document.documentElement.dataset.specialDayType=active()?.type||'';apply()}},60000)}
+window.NEXORA_SPECIAL_DAYS={days:DAYS,active,apply,showRespect:()=>{document.getElementById('respectOverlay')?.removeAttribute('hidden')}};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();

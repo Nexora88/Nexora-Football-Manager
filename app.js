@@ -19,6 +19,8 @@ const GRID_WIDTH=100,GRID_HEIGHT=60;
 const pitchGrid={width:GRID_WIDTH,height:GRID_HEIGHT};
 const gameState={date:'2026-07-01',money:5000000,managerName:'',club:null,managerStyle:'Tactical Genius',season:'2026/27',reputation:100,boardConfidence:60,formation:'4-3-3',grid:pitchGrid};
 window.NEXORA_GAME_STATE=gameState;
+window.gameState=gameState;
+window.NEXORA_STATE={get:()=>window.gameState,save:()=>window.saveState?.()};
 
 const clubs=NEXORA_DATA.clubs;
 const opponent={name:'Kuzey Liman FK',code:'KLF',style:'Balanced'};

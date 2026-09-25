@@ -18,8 +18,8 @@
     if(m.lastDailyNews===stamp)return;
     const club=s.gameState.club?.name||'Kulübün',pool=[
       ['LEAGUE','Lig gündemi hareketli',`${club} antrenman temposunu artırdı. Teknik ekip sezon planını sürdürüyor.`],
-      ['WORLD','Transfer masası ısınıyor','Kulüpler sezon öncesi kadrolarını şekillendirirken scout ekipleri yeni isimleri izliyor.`],
-      ['MEDIA','Basın toplantısı','Yerel spor basını, kulüplerin hazırlık dönemindeki performansını yakından takip ediyor.`],
+      ['WORLD','Transfer masası ısınıyor','Kulüpler sezon öncesi kadrolarını şekillendirirken scout ekipleri yeni isimleri izliyor.'],
+      ['MEDIA','Basın toplantısı','Yerel spor basını, kulüplerin hazırlık dönemindeki performansını yakından takip ediyor.'],
       ['SUPPORTERS','Tribünlerde beklenti','Taraftarlar yeni sezon öncesi kadronun gelişimini ve yönetimin hamlelerini konuşuyor.']
     ];
     const item=pool[(day+Number(stamp.replaceAll('-','')))%pool.length];
