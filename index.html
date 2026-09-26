@@ -6,19 +6,90 @@
   <meta name="description" content="Nexora Football Manager — Build your club. Shape your legacy.">
   <title>Nexora Football Manager</title>
 
-  <!-- Sadece temel stiller -->
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="stadium.css">
   <link rel="stylesheet" href="phase1.css">
   <link rel="stylesheet" href="sound-engine.css">
 
   <style>
-    /* Hızlı yükleme için basit overlay */
+    /* Dil seçim ekranı */
+    #langGate {
+      position: fixed;
+      inset: 0;
+      z-index: 100000;
+      background: #070707;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      transition: opacity 0.35s ease, visibility 0.35s;
+    }
+    #langGate.hide {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    #langGate .lang-card {
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+    }
+    #langGate .lang-card .eyebrow {
+      color: #b7ff3c;
+      letter-spacing: 0.18em;
+      font-size: 0.75rem;
+      margin-bottom: 12px;
+    }
+    #langGate .lang-card h1 {
+      font-size: clamp(1.8rem, 6vw, 2.4rem);
+      margin: 0 0 8px;
+      color: #fff;
+    }
+    #langGate .lang-card p {
+      opacity: 0.65;
+      margin: 0 0 28px;
+      line-height: 1.5;
+    }
+    #langGate .lang-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    #langGate .lang-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      padding: 16px 20px;
+      border: 1px solid #222;
+      border-radius: 12px;
+      background: #111;
+      color: #fff;
+      font-size: 1.05rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s, transform 0.15s;
+    }
+    #langGate .lang-btn:hover,
+    #langGate .lang-btn:focus {
+      border-color: #b7ff3c;
+      background: #151515;
+      outline: none;
+    }
+    #langGate .lang-btn:active {
+      transform: scale(0.98);
+    }
+    #langGate .lang-btn span.flag {
+      font-size: 1.5rem;
+      line-height: 1;
+    }
+
+    /* Kısa loading */
     #nexora-loading {
       position: fixed;
       inset: 0;
       background: #0a0a0a;
-      z-index: 99999;
+      z-index: 99998;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -32,27 +103,24 @@
       pointer-events: none;
     }
     #nexora-loading .spinner {
-      width: 40px;
-      height: 40px;
+      width: 36px;
+      height: 36px;
       border: 3px solid #222;
       border-top-color: #b7ff3c;
       border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      margin-bottom: 16px;
+      animation: spin 0.75s linear infinite;
+      margin-bottom: 14px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 
   <script>
-    // Hızlı unlock - 1.5 saniye sonra loading'i kapat
     (function () {
       window.NEXORA_BOOT = { started: Date.now(), errors: [] };
       function hideLoading() {
         var el = document.getElementById('nexora-loading');
         if (el) el.classList.add('hide');
         document.body.classList.add('app-ready');
-        var h = document.querySelector('.hero');
-        if (h) h.hidden = false;
       }
       window.addEventListener('error', function (e) {
         window.NEXORA_BOOT.errors.push(String(e.error || e.message || e));
@@ -63,22 +131,35 @@
         hideLoading();
       });
       document.addEventListener('DOMContentLoaded', function () {
-        setTimeout(hideLoading, 1200);
+        setTimeout(hideLoading, 1000);
       });
       window.addEventListener('load', function () {
-        setTimeout(hideLoading, 400);
+        setTimeout(hideLoading, 300);
       });
-      // Güvenlik: en geç 3 saniyede kapat
-      setTimeout(hideLoading, 3000);
+      setTimeout(hideLoading, 2500);
     })();
   </script>
 </head>
 <body>
-  <!-- Loading overlay -->
+  <!-- Dil seçimi (ilk girişte) -->
+  <div id="langGate" aria-hidden="false">
+    <div class="lang-card">
+      <p class="eyebrow">NEXORA FOOTBALL MANAGER</p>
+      <h1>Hangi dilde devam etmek istersiniz?</h1>
+      <p>Which language would you like to continue in?</p>
+      <div class="lang-list">
+        <button type="button" class="lang-btn" data-lang="tr"><span class="flag">🇹🇷</span> Türkçe</button>
+        <button type="button" class="lang-btn" data-lang="en"><span class="flag">🇬🇧</span> English</button>
+        <button type="button" class="lang-btn" data-lang="de"><span class="flag">🇩🇪</span> Deutsch</button>
+        <button type="button" class="lang-btn" data-lang="es"><span class="flag">🇪🇸</span> Español</button>
+        <button type="button" class="lang-btn" data-lang="pt"><span class="flag">🇧🇷</span> Português</button>
+      </div>
+    </div>
+  </div>
+
   <div id="nexora-loading">
     <div class="spinner"></div>
     <div>NEXORA</div>
-    <small style="opacity:0.6;margin-top:8px">Loading...</small>
   </div>
 
   <div class="noise"></div>
@@ -104,9 +185,7 @@
     </header>
 
     <section class="hero-content" id="vision">
-      <div class="live-line">
-        <span></span> THE NEXT FOOTBALL MANAGEMENT EXPERIENCE
-      </div>
+      <div class="live-line"><span></span> THE NEXT FOOTBALL MANAGEMENT EXPERIENCE</div>
       <p class="eyebrow">BUILD A CLUB. BUILD A LEGACY.</p>
       <h1>YOUR CLUB.<br><em>YOUR ERA.</em></h1>
       <p class="intro">
@@ -244,28 +323,75 @@
     </div>
   </section>
 
-  <!-- SADECE KRİTİK DOSYALAR (landing + career start için yeterli) -->
+  <!-- Dil kapısı mantığı (mevcut i18n sistemini kullanır) -->
+  <script>
+    (function () {
+      var KEY = 'nexoraLanguage';
+      var gate = document.getElementById('langGate');
+
+      function applyLang(code) {
+        localStorage.setItem(KEY, code);
+        document.documentElement.lang = code;
+        document.documentElement.dataset.language = code;
+        if (window.NEXORA_I18N && window.NEXORA_I18N.setLanguage) {
+          window.NEXORA_I18N.setLanguage(code);
+        }
+        window.dispatchEvent(new CustomEvent('nexora:language-changed', { detail: { language: code } }));
+        if (window.NEXORA_HOME_I18N && window.NEXORA_HOME_I18N.refresh) {
+          window.NEXORA_HOME_I18N.refresh();
+        }
+      }
+
+      function closeGate() {
+        if (!gate) return;
+        gate.classList.add('hide');
+        gate.setAttribute('aria-hidden', 'true');
+      }
+
+      var saved = localStorage.getItem(KEY);
+      if (saved) {
+        closeGate();
+        // i18n yüklenince uygula
+        window.addEventListener('load', function () { applyLang(saved); });
+      }
+
+      if (gate) {
+        gate.querySelectorAll('.lang-btn').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var code = btn.getAttribute('data-lang');
+            applyLang(code);
+            closeGate();
+          });
+        });
+      }
+    })();
+  </script>
+
+  <!-- Kritik scriptler -->
   <script src="data.js" defer></script>
   <script src="players.js" defer></script>
   <script src="turkish-players.js" defer></script>
   <script src="universal-players.js" defer></script>
   <script src="players-bridge.js" defer></script>
+  <script src="i18n.js" defer></script>
+  <script src="home-i18n.js" defer></script>
   <script src="app.js" defer></script>
   <script src="click-fix.js" defer></script>
   <script src="boot-ui.js" defer></script>
   <script src="sound-engine.js" defer></script>
   <script src="airport-transfer.js" defer></script>
+  <script src="nexora-fix.js" defer></script>
 
-  <!-- Kariyer başladıktan sonra ağır modülleri yükle -->
+  <!-- Kariyer sonrası ağır modüller -->
   <script>
     window.addEventListener('nexora:career-ready', function () {
-      const heavy = [
+      var heavy = [
         'stadium.js', 'facilities.js', 'transfer.js', 'news.js',
         'phase1.js', 'match-engine-v2.js', 'game-loop.js',
         'manager-career.js', 'match-atmosphere.js', 'weather-engine.js',
         'matchday-engine.js', 'commentary.js', 'growth-engine.js',
         'growth-ui.js', 'special-days.js', 'player-control.js',
-        'i18n.js', 'home-i18n.js', 'international-clubs.js'
+        'international-clubs.js'
       ];
       heavy.forEach(function (src) {
         if (document.querySelector('script[src="' + src + '"]')) return;
