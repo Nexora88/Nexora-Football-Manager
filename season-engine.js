@@ -102,6 +102,7 @@
     s.phase=next?'calendar':'season-end';
     s.seasonComplete=!next;
     s.championId=s.seasonComplete?s.table[0]?.id||null:null;
+    if(s.seasonComplete){const userRow=s.table.find(t=>t.id===state.club?.id),finalPosition=s.table.findIndex(t=>t.id===state.club?.id)+1;const reward=finalPosition===1?1000000:finalPosition<=3?500000:finalPosition<=6?250000:100000;s.awards={champion:s.table[0]?.name||'—',finalPosition,finalPoints:userRow?.pts||0,reward,title:finalPosition===1?'LEAGUE CHAMPION':finalPosition<=3?'PODIUM FINISH':'SEASON COMPLETE'};state.money=(state.money||0)+reward;state.reputation=Math.min(100,(state.reputation||0)+(finalPosition===1?10:finalPosition<=3?5:2));}
     window.saveState?.();event('nexora:career-saved',{state});
     if(s.seasonComplete)event('nexora:season-complete',{state});
     else {state.date=next.date;event('nexora:fixture-ready',{fixture:next});}
@@ -112,7 +113,7 @@
     if(!host)return;const s=ensure(state),f=current(state),position=getUserStanding(state),top=s?.table?.slice(0,5)||[];
     const en=window.NEXORA_I18N?.language==='en';
     const labels=en?{next:'NEXT MATCH',play:'PLAY NEXT MATCH →',advance:'ADVANCE DAY',table:'TABLE',season:'SEASON',complete:'SEASON COMPLETE',champ:'CHAMPION',you:'YOUR POSITION'}:{next:'SONRAKİ MAÇ',play:'SONRAKİ MAÇI OYNA →',advance:'GÜNÜ İLERLET',table:'PUAN DURUMU',season:'SEZON',complete:'SEZON TAMAMLANDI',champ:'ŞAMPİYON',you:'SIRANIZ'};
-    if(!f){host.innerHTML='<span class="eyebrow">'+labels.season+'</span><strong>'+labels.complete+'</strong><p>'+labels.champ+': '+(s?.table?.[0]?.name||'—')+' · '+labels.you+': '+position+'</p>';return}
+    if(!f){const a=s?.awards;host.innerHTML='<span class="eyebrow">'+labels.season+'</span><strong>'+labels.complete+'</strong><p>'+labels.champ+': '+(a?.champion||s?.table?.[0]?.name||'—')+' · '+labels.you+': '+(a?.finalPosition||position)+'</p><div class="season-reward"><b>'+(en?'SEASON REWARD':'SEZON ÖDÜLÜ')+'</b><span>'+(a?.title||'SEASON COMPLETE')+' · €'+((a?.reward||0)/1000).toLocaleString('en-US')+'K</span></div>';return}
     host.innerHTML='<span class="eyebrow">'+labels.next+'</span><strong>'+f.home+' <em>vs</em> '+f.away+'</strong><small>'+f.date+' · MATCHDAY '+f.matchday+' · '+labels.you+': '+position+'</small><div class="season-mini-table"><b>TOP 5</b>'+top.map((r,i)=>'<span>'+(i+1)+'. '+r.name+' <b>'+r.pts+'</b></span>').join('')+'</div><div class="season-actions"><button class="primary" id="playNextMatchBtn">'+labels.play+'</button><button class="secondary" id="advanceDayBtn">'+labels.advance+'</button><button class="secondary" id="tableBtn">'+labels.table+'</button></div>';
   }
   window.NEXORA_SEASON={ensure,current,advance,start,finish,opponent:function(state){const f=current(state);if(!f)return null;const id=f.homeId===state.club.id?f.awayId:f.homeId;return(window.NEXORA_DATA?.clubs||[]).find(c=>c.id===id)||{id,name:'Opponent',code:'OPP',style:'Balanced'}},renderNext,getUserStanding,rebuildTable};
