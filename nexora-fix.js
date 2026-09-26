@@ -1,156 +1,165 @@
-/* NEXORA FIX — squad ID bug + language system */
+/* NEXORA FIX — squad ID + avatar/VIP kilit + dashboard geçişi */
 (() => {
-  // ---- 1) Squad ID bug fix (string ID'ler bozulmasın) ----
-  if (typeof window.toggleStarter === 'function' || true) {
-    window.toggleStarter = function (id) {
-      // Number() KULLANMA — ID string veya number olabilir
-      const sid = id;
-      if (!window.startingXI) window.startingXI = [];
-      if (window.startingXI.includes(sid)) {
-        window.startingXI = window.startingXI.filter(x => x !== sid);
-      } else if (window.startingXI.length < 11) {
-        window.startingXI = [...window.startingXI, sid];
-      } else {
-        return;
-      }
-      if (typeof window.persist === 'function') window.persist();
-      if (typeof window.renderSquad === 'function') window.renderSquad();
-    };
+  // ---------- Squad ID bug (string id: "ays-1") ----------
+  function safeToggleStarter(id) {
+    if (!Array.isArray(window.startingXI)) window.startingXI = [];
+    const sid = id; // Number() YAPMA
+    if (window.startingXI.includes(sid)) {
+      window.startingXI = window.startingXI.filter((x) => x !== sid);
+    } else if (window.startingXI.length < 11) {
+      window.startingXI = [...window.startingXI, sid];
+    } else {
+      return;
+    }
+    if (typeof window.persist === 'function') window.persist();
+    if (typeof window.renderSquad === 'function') window.renderSquad();
   }
+  window.toggleStarter = safeToggleStarter;
 
-  // app.js içindeki Number() çağrılarını runtime'da düzelt
-  const originalRenderSquad = window.renderSquad;
-  if (typeof originalRenderSquad === 'function') {
+  // renderSquad sonrası listener'ları güvenli bağla
+  const patchRenderSquad = () => {
+    const orig = window.renderSquad;
+    if (typeof orig !== 'function' || orig.__nexoraPatched) return;
     window.renderSquad = function () {
-      originalRenderSquad.apply(this, arguments);
-      // Event listener'ları güvenli ID ile yeniden bağla
-      document.querySelectorAll('.player-row').forEach(row => {
-        const newRow = row.cloneNode(true);
-        row.parentNode.replaceChild(newRow, row);
-        newRow.addEventListener('click', () => {
-          // dataset.player string kalsın
-          window.toggleStarter(newRow.dataset.player);
-        });
+      orig.apply(this, arguments);
+      document.querySelectorAll('.player-row').forEach((row) => {
+        const clone = row.cloneNode(true);
+        row.parentNode.replaceChild(clone, row);
+        clone.addEventListener('click', () => safeToggleStarter(clone.dataset.player));
       });
     };
-  }
+    window.renderSquad.__nexoraPatched = true;
+  };
 
-  // openSquad güvenli hale getir
-  const originalOpenSquad = window.openSquad;
+  // openSquad güvenli
   window.openSquad = function () {
     try {
-      if (!window.career?.club && !window.NEXORA_GAME_STATE?.club) {
-        alert('Önce bir kariyer başlatın.');
-        return;
-      }
-      // career yoksa gameState'ten doldur
       if (!window.career?.club && window.NEXORA_GAME_STATE?.club) {
         window.career = window.career || {};
         window.career.club = window.NEXORA_GAME_STATE.club;
       }
-      if (typeof originalOpenSquad === 'function') {
-        originalOpenSquad();
-      } else {
-        // Fallback
-        let area = document.getElementById('gameArea');
-        if (!area) {
-          area = document.createElement('section');
-          area.id = 'gameArea';
-          area.className = 'game-area';
-          document.getElementById('dashboard')?.appendChild(area);
-        }
-        if (typeof window.renderSquad === 'function') window.renderSquad();
-        area.scrollIntoView({ behavior: 'smooth' });
+      if (!window.career?.club) {
+        alert('Önce bir kariyer başlatın.');
+        return;
       }
+      patchRenderSquad();
+      let area = document.getElementById('gameArea');
+      if (!area) {
+        area = document.createElement('section');
+        area.id = 'gameArea';
+        area.className = 'game-area';
+        document.getElementById('dashboard')?.appendChild(area);
+      }
+      if (typeof window.renderSquad === 'function') window.renderSquad();
+      area.scrollIntoView({ behavior: 'smooth' });
     } catch (err) {
-      console.error('[NEXORA] openSquad error', err);
-      alert('Kadro açılamadı. Konsolu kontrol edin.');
+      console.error('[NEXORA] openSquad', err);
+      alert('Kadro açılamadı: ' + (err.message || err));
     }
   };
 
-  // squadBtn'a güvenli bağla
-  document.addEventListener('click', (e) => {
-    if (e.target?.closest?.('#squadBtn')) {
-      e.preventDefault();
-      e.stopPropagation();
-      window.openSquad();
-    }
-  }, true);
+  document.addEventListener(
+    'click',
+    (e) => {
+      if (e.target?.closest?.('#squadBtn')) {
+        e.preventDefault();
+        e.stopPropagation();
+        window.openSquad();
+      }
+    },
+    true
+  );
 
-  // ---- 2) Dil sistemi ----
-  const LANGS = {
-    tr: { name: 'Türkçe', flag: '🇹🇷' },
-    en: { name: 'English', flag: '🇬🇧' },
-    de: { name: 'Deutsch', flag: '🇩🇪' }
+  // ---------- Avatar + VIP Terminal kilidini kır ----------
+  function showDashboard() {
+    const hero = document.querySelector('.hero');
+    const dash = document.getElementById('dashboard');
+    if (hero) hero.hidden = true;
+    if (dash) dash.hidden = false;
+    document.body.style.overflow = '';
+    // engelleyen katmanları kaldır
+    document.getElementById('nexoraAvatarModal')?.remove();
+    document.querySelector('.airport-vip')?.remove();
+    window.NEXORA_AIRPORT?.close?.();
+  }
+
+  function bindAvatarBypass() {
+    const modal = document.getElementById('nexoraAvatarModal');
+    if (!modal) return;
+    const btn = modal.querySelector('#confirmAvatar');
+    if (!btn || btn.__nexoraBound) return;
+    btn.__nexoraBound = true;
+    btn.addEventListener(
+      'click',
+      (e) => {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        const outfit =
+          modal.querySelector('#nexoraAvatarPreview')?.dataset?.outfit || 'formal';
+        localStorage.setItem('nexoraAvatar', JSON.stringify({ outfit }));
+        modal.remove();
+        window.NEXORA_SOUND?.unlock?.();
+        // VIP terminali atla — direkt dashboard
+        showDashboard();
+        // İstersen kısa VIP animasyonu gösterip kapat:
+        try {
+          window.NEXORA_AIRPORT?.open?.('NEW CAREER');
+          setTimeout(() => {
+            window.NEXORA_AIRPORT?.close?.();
+            showDashboard();
+          }, 2200);
+        } catch (_) {
+          showDashboard();
+        }
+      },
+      true
+    );
+  }
+
+  // airport auto-close (sonsuz takılmasın)
+  const patchAirport = () => {
+    if (!window.NEXORA_AIRPORT?.open || window.NEXORA_AIRPORT.__patched) return;
+    const origOpen = window.NEXORA_AIRPORT.open.bind(window.NEXORA_AIRPORT);
+    window.NEXORA_AIRPORT.open = function (reason) {
+      origOpen(reason);
+      setTimeout(() => {
+        window.NEXORA_AIRPORT.close?.();
+        showDashboard();
+      }, 2500);
+    };
+    window.NEXORA_AIRPORT.__patched = true;
   };
 
-  function getLang() {
-    return localStorage.getItem('nexoraLang') || null;
-  }
-
-  function setLang(code) {
-    localStorage.setItem('nexoraLang', code);
-    window.NEXORA_LANG = code;
-    document.documentElement.lang = code === 'tr' ? 'tr' : code === 'de' ? 'de' : 'en';
-    // i18n varsa uygula
-    if (window.NEXORA_I18N?.setLanguage) {
-      window.NEXORA_I18N.setLanguage(code);
-    }
-    window.dispatchEvent(new CustomEvent('nexora:lang-changed', { detail: code }));
-  }
-
-  function showLangModal(onDone) {
-    if (document.getElementById('nexoraLangModal')) return;
-    const m = document.createElement('div');
-    m.id = 'nexoraLangModal';
-    m.className = 'modal open';
-    m.setAttribute('aria-hidden', 'false');
-    m.innerHTML = `
-      <div class="modal-card" style="max-width:420px;text-align:center">
-        <p class="eyebrow">LANGUAGE / DİL</p>
-        <h2>Choose your language</h2>
-        <p style="opacity:.7;margin-bottom:24px">Select the language for the game interface</p>
-        <div style="display:flex;flex-direction:column;gap:12px">
-          ${Object.entries(LANGS).map(([code, l]) => `
-            <button class="primary full lang-choice" data-lang="${code}" style="display:flex;align-items:center;justify-content:center;gap:12px">
-              <span style="font-size:1.4em">${l.flag}</span>
-              <strong>${l.name}</strong>
-            </button>
-          `).join('')}
-        </div>
-      </div>
-    `;
-    document.body.appendChild(m);
-    document.body.style.overflow = 'hidden';
-
-    m.querySelectorAll('.lang-choice').forEach(btn => {
-      btn.addEventListener('click', () => {
-        setLang(btn.dataset.lang);
-        m.remove();
-        document.body.style.overflow = '';
-        if (typeof onDone === 'function') onDone(btn.dataset.lang);
-      });
-    });
-  }
-
-  // Kariyer başlarken dil sor
+  // career-ready sonrası
   window.addEventListener('nexora:career-ready', () => {
-    if (!getLang()) {
-      showLangModal();
-    } else {
-      setLang(getLang());
-    }
-  }, { once: false });
+    patchRenderSquad();
+    patchAirport();
+    setTimeout(bindAvatarBypass, 150);
+    setTimeout(bindAvatarBypass, 500);
+    // 8 sn sonra hâlâ avatar/VIP varsa zorla dashboard
+    setTimeout(() => {
+      if (
+        document.getElementById('nexoraAvatarModal') ||
+        document.querySelector('.airport-vip')
+      ) {
+        showDashboard();
+      }
+    }, 8000);
+  });
 
-  // İlk açılışta da kontrol (eğer kayıtlı kariyer varsa)
+  // Sayfa yüklenince de dene (kayıtlı kariyer)
+  const boot = () => {
+    patchRenderSquad();
+    patchAirport();
+    if (window.NEXORA_GAME_STATE?.club) showDashboard();
+  };
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      if (getLang()) setLang(getLang());
-    });
-  } else if (getLang()) {
-    setLang(getLang());
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
   }
-
-  // Global erişim
-  window.NEXORA_LANG_API = { getLang, setLang, showLangModal, LANGS };
+  window.addEventListener('load', () => {
+    patchAirport();
+    setTimeout(bindAvatarBypass, 200);
+  });
 })();
